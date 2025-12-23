@@ -1,0 +1,10 @@
+Bom dia! 😊
+
+Esta é uma mensagem padrão enviada automaticamente.
+
+Para personalizar suas mensagens:
+1. Crie um arquivo com a data: YYYY-MM-DD.txt
+2. Exemplo: 2025-12-25.txt para mensagem no dia 25/12/2025
+3. Opcionalmente adicione uma imagem com o mesmo nome na pasta images/
+
+Tenha um ótimo dia! ✨

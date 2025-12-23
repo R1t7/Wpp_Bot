@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# Bot específico
+config.json
+profiles/
+logs/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Imagens (opcional - remova se quiser versionar)
+images/*.jpg
+images/*.jpeg
+images/*.png
+images/*.gif
+!images/.gitkeep
+
+# Mensagens personalizadas (opcional - remova se quiser versionar)
+messages/*.txt
+!messages/default.txt
+!messages/README.txt
+!messages/exemplo_*.txt
