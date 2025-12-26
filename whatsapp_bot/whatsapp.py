@@ -158,48 +158,116 @@ class WhatsAppBot:
 
             # Converter para caminho absoluto
             abs_image_path = os.path.abspath(image_path)
+            logger.info(f"Caminho absoluto: {abs_image_path}")
 
-            # Encontrar e clicar no botão de anexo
-            attach_button = self.wait.until(EC.presence_of_element_located(
-                (By.XPATH, '//div[@title="Anexar"]')
-            ))
+            # Tentar múltiplos seletores para o botão de anexo
+            attach_button = None
+            attach_selectors = [
+                '//div[@title="Anexar"]',
+                '//div[@aria-label="Anexar"]',
+                '//span[@data-icon="plus"]',
+                '//span[@data-icon="attach-menu-plus"]',
+                '//button[@aria-label="Anexar"]'
+            ]
+
+            for selector in attach_selectors:
+                try:
+                    logger.info(f"Tentando seletor: {selector}")
+                    attach_button = self.driver.find_element(By.XPATH, selector)
+                    if attach_button:
+                        logger.info(f"Botão de anexo encontrado com: {selector}")
+                        break
+                except NoSuchElementException:
+                    continue
+
+            if not attach_button:
+                logger.error("Botão de anexo não encontrado")
+                return False
+
             attach_button.click()
-            time.sleep(1)
-
-            # Encontrar input de arquivo e enviar o caminho da imagem
-            file_input = self.wait.until(EC.presence_of_element_located(
-                (By.XPATH, '//input[@accept="image/*,video/mp4,video/3gpp,video/quicktime"]')
-            ))
-            file_input.send_keys(abs_image_path)
+            logger.info("Botão de anexo clicado")
             time.sleep(2)
+
+            # Tentar múltiplos seletores para o input de arquivo
+            file_input = None
+            input_selectors = [
+                '//input[@accept="image/*,video/mp4,video/3gpp,video/quicktime"]',
+                '//input[@type="file"]',
+                '//input[@accept*="image"]'
+            ]
+
+            for selector in input_selectors:
+                try:
+                    logger.info(f"Tentando seletor de input: {selector}")
+                    file_input = self.driver.find_element(By.XPATH, selector)
+                    if file_input:
+                        logger.info(f"Input de arquivo encontrado com: {selector}")
+                        break
+                except NoSuchElementException:
+                    continue
+
+            if not file_input:
+                logger.error("Input de arquivo não encontrado")
+                return False
+
+            file_input.send_keys(abs_image_path)
+            logger.info("Caminho da imagem enviado para input")
+            time.sleep(3)
 
             # Se houver legenda, adicionar
             if caption:
-                caption_box = self.wait.until(EC.presence_of_element_located(
-                    (By.XPATH, '//div[@contenteditable="true"][@data-tab="10"]')
-                ))
+                logger.info("Tentando adicionar legenda")
+                try:
+                    caption_box = self.wait.until(EC.presence_of_element_located(
+                        (By.XPATH, '//div[@contenteditable="true"][@data-tab="10"]')
+                    ))
 
-                # Dividir legenda por linhas
-                lines = caption.split('\n')
-                for i, line in enumerate(lines):
-                    caption_box.send_keys(line)
-                    if i < len(lines) - 1:
-                        caption_box.send_keys(Keys.SHIFT + Keys.ENTER)
+                    # Dividir legenda por linhas
+                    lines = caption.split('\n')
+                    for i, line in enumerate(lines):
+                        caption_box.send_keys(line)
+                        if i < len(lines) - 1:
+                            caption_box.send_keys(Keys.SHIFT + Keys.ENTER)
 
-                time.sleep(1)
+                    logger.info("Legenda adicionada")
+                    time.sleep(1)
+                except Exception as e:
+                    logger.warning(f"Erro ao adicionar legenda: {e}")
 
-            # Clicar no botão de enviar
-            send_button = self.wait.until(EC.presence_of_element_located(
-                (By.XPATH, '//span[@data-icon="send"]')
-            ))
+            # Tentar múltiplos seletores para o botão de enviar
+            send_button = None
+            send_selectors = [
+                '//span[@data-icon="send"]',
+                '//button[@aria-label="Enviar"]',
+                '//span[@data-testid="send"]',
+                '//div[@aria-label="Enviar"]'
+            ]
+
+            for selector in send_selectors:
+                try:
+                    logger.info(f"Tentando seletor de envio: {selector}")
+                    send_button = WebDriverWait(self.driver, 5).until(
+                        EC.presence_of_element_located((By.XPATH, selector))
+                    )
+                    if send_button:
+                        logger.info(f"Botão de enviar encontrado com: {selector}")
+                        break
+                except:
+                    continue
+
+            if not send_button:
+                logger.error("Botão de enviar não encontrado")
+                return False
+
             send_button.click()
+            logger.info("Botão de enviar clicado")
             time.sleep(3)
 
             logger.info("Imagem enviada com sucesso")
             return True
 
         except Exception as e:
-            logger.error(f"Erro ao enviar imagem: {e}")
+            logger.error(f"Erro ao enviar imagem: {e}", exc_info=True)
             return False
 
     def get_message_for_today(self, messages_dir):
