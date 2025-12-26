@@ -259,8 +259,16 @@ class WhatsAppBot:
                 logger.error("Botão de enviar não encontrado")
                 return False
 
-            send_button.click()
-            logger.info("Botão de enviar clicado")
+            # Tentar clicar usando JavaScript para evitar element intercepted
+            try:
+                logger.info("Tentando clicar com JavaScript")
+                self.driver.execute_script("arguments[0].click();", send_button)
+                logger.info("Botão de enviar clicado via JavaScript")
+            except:
+                logger.info("JavaScript falhou, tentando clique normal")
+                send_button.click()
+                logger.info("Botão de enviar clicado")
+
             time.sleep(3)
 
             logger.info("Imagem enviada com sucesso")
