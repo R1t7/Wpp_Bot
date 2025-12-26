@@ -212,7 +212,14 @@ class WhatsAppBot:
 
             file_input.send_keys(abs_image_path)
             logger.info("Caminho da imagem enviado para input")
-            time.sleep(3)
+
+            # Aguardar a imagem carregar (verificar se o preview apareceu)
+            logger.info("Aguardando imagem carregar...")
+            time.sleep(5)
+
+            # Verificar se o botão de enviar está habilitado
+            logger.info("Verificando se botão de enviar está disponível...")
+            time.sleep(2)
 
             # Se houver legenda, adicionar
             if caption:
@@ -230,7 +237,7 @@ class WhatsAppBot:
                             caption_box.send_keys(Keys.SHIFT + Keys.ENTER)
 
                     logger.info("Legenda adicionada")
-                    time.sleep(1)
+                    time.sleep(2)
                 except Exception as e:
                     logger.warning(f"Erro ao adicionar legenda: {e}")
 
