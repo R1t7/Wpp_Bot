@@ -234,28 +234,10 @@ class WhatsAppBot:
             logger.info("Aguardando preview da imagem...")
             time.sleep(3)
 
-            # Se houver legenda, adicionar e enviar usando Enter
-            if caption:
-                logger.info("Tentando adicionar legenda")
-                try:
-                    caption_box = self.wait.until(EC.presence_of_element_located(
-                        (By.XPATH, '//div[@contenteditable="true"][@data-tab="10"]')
-                    ))
+            # Enviar imagem sem legenda (legenda será enviada como mensagem separada depois)
+            logger.info("Enviando imagem sem legenda...")
 
-                    # Dividir legenda por linhas
-                    lines = caption.split('\n')
-                    for i, line in enumerate(lines):
-                        caption_box.send_keys(line)
-                        if i < len(lines) - 1:
-                            caption_box.send_keys(Keys.SHIFT + Keys.ENTER)
-
-                    logger.info("Legenda adicionada")
-                    time.sleep(2)
-
-                except Exception as e:
-                    logger.warning(f"Erro ao adicionar legenda: {e}")
-
-            # Procurar e clicar no botão de enviar da preview (com ou sem legenda)
+            # Procurar e clicar no botão de enviar da preview
             logger.info("Procurando botão de enviar da preview...")
             send_button = None
             send_selectors = [
@@ -300,6 +282,17 @@ class WhatsAppBot:
                 return False
 
             logger.info("Imagem enviada com sucesso")
+
+            # Se houver legenda, enviar como mensagem de texto separada
+            if caption:
+                logger.info("Enviando legenda como mensagem de texto...")
+                time.sleep(2)  # Aguardar imagem ser processada
+
+                if self.send_text_message(caption):
+                    logger.info("Legenda enviada com sucesso")
+                else:
+                    logger.warning("Falha ao enviar legenda")
+
             return True
 
         except Exception as e:
