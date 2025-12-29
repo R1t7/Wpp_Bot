@@ -225,7 +225,18 @@ class WhatsAppBot:
             message_box.click()
             time.sleep(1)
 
-            # Colar imagem (Ctrl+V)
+            # Se houver legenda, escrever o texto primeiro (sem enviar)
+            if caption:
+                logger.info("Escrevendo texto na caixa de mensagem...")
+                lines = caption.split('\n')
+                for i, line in enumerate(lines):
+                    message_box.send_keys(line)
+                    if i < len(lines) - 1:
+                        message_box.send_keys(Keys.SHIFT + Keys.ENTER)
+                logger.info("Texto escrito, agora colando imagem...")
+                time.sleep(1)
+
+            # Colar imagem (Ctrl+V) - vai anexar junto com o texto
             logger.info("Colando imagem (Ctrl+V)...")
             message_box.send_keys(Keys.CONTROL, 'v')
             time.sleep(3)
@@ -282,17 +293,6 @@ class WhatsAppBot:
                 return False
 
             logger.info("Imagem enviada com sucesso")
-
-            # Se houver legenda, enviar como mensagem de texto separada
-            if caption:
-                logger.info("Enviando legenda como mensagem de texto...")
-                time.sleep(2)  # Aguardar imagem ser processada
-
-                if self.send_text_message(caption):
-                    logger.info("Legenda enviada com sucesso")
-                else:
-                    logger.warning("Falha ao enviar legenda")
-
             return True
 
         except Exception as e:
