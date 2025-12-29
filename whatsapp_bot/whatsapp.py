@@ -221,7 +221,7 @@ class WhatsAppBot:
             logger.info("Verificando se botão de enviar está disponível...")
             time.sleep(2)
 
-            # Se houver legenda, adicionar
+            # Se houver legenda, adicionar e enviar usando Enter
             if caption:
                 logger.info("Tentando adicionar legenda")
                 try:
@@ -238,45 +238,53 @@ class WhatsAppBot:
 
                     logger.info("Legenda adicionada")
                     time.sleep(2)
+
+                    # Enviar usando Enter no campo de legenda
+                    logger.info("Enviando imagem usando Enter")
+                    caption_box.send_keys(Keys.ENTER)
+                    time.sleep(3)
+
                 except Exception as e:
                     logger.warning(f"Erro ao adicionar legenda: {e}")
+            else:
+                # Se não houver legenda, tentar clicar no botão de enviar
+                logger.info("Sem legenda, tentando botão de enviar")
 
-            # Tentar múltiplos seletores para o botão de enviar
-            send_button = None
-            send_selectors = [
-                '//span[@data-icon="send"]',
-                '//button[@aria-label="Enviar"]',
-                '//span[@data-testid="send"]',
-                '//div[@aria-label="Enviar"]'
-            ]
+                send_button = None
+                send_selectors = [
+                    '//span[@data-icon="send"]',
+                    '//button[@aria-label="Enviar"]',
+                    '//span[@data-testid="send"]',
+                    '//div[@aria-label="Enviar"]'
+                ]
 
-            for selector in send_selectors:
+                for selector in send_selectors:
+                    try:
+                        logger.info(f"Tentando seletor de envio: {selector}")
+                        send_button = WebDriverWait(self.driver, 5).until(
+                            EC.presence_of_element_located((By.XPATH, selector))
+                        )
+                        if send_button:
+                            logger.info(f"Botão de enviar encontrado com: {selector}")
+                            break
+                    except:
+                        continue
+
+                if not send_button:
+                    logger.error("Botão de enviar não encontrado")
+                    return False
+
+                # Tentar clicar usando JavaScript
                 try:
-                    logger.info(f"Tentando seletor de envio: {selector}")
-                    send_button = WebDriverWait(self.driver, 5).until(
-                        EC.presence_of_element_located((By.XPATH, selector))
-                    )
-                    if send_button:
-                        logger.info(f"Botão de enviar encontrado com: {selector}")
-                        break
+                    logger.info("Tentando clicar com JavaScript")
+                    self.driver.execute_script("arguments[0].click();", send_button)
+                    logger.info("Botão de enviar clicado via JavaScript")
                 except:
-                    continue
+                    logger.info("JavaScript falhou, tentando clique normal")
+                    send_button.click()
+                    logger.info("Botão de enviar clicado")
 
-            if not send_button:
-                logger.error("Botão de enviar não encontrado")
-                return False
-
-            # Tentar clicar usando JavaScript para evitar element intercepted
-            try:
-                logger.info("Tentando clicar com JavaScript")
-                self.driver.execute_script("arguments[0].click();", send_button)
-                logger.info("Botão de enviar clicado via JavaScript")
-            except:
-                logger.info("JavaScript falhou, tentando clique normal")
-                send_button.click()
-                logger.info("Botão de enviar clicado")
-
-            time.sleep(3)
+                time.sleep(3)
 
             logger.info("Imagem enviada com sucesso")
             return True
