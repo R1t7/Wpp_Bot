@@ -11,6 +11,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 import io
 from PIL import Image
@@ -251,14 +252,11 @@ class WhatsAppBot:
                     logger.info("Legenda adicionada")
                     time.sleep(1)
 
-                    # Garantir que o campo de legenda está focado
-                    caption_box.click()
-                    time.sleep(0.5)
-
-                    # Enviar usando Enter no campo de legenda
+                    # Enviar usando Enter com ActionChains
                     logger.info("Enviando imagem usando Enter")
-                    caption_box.send_keys(Keys.ENTER)
-                    logger.info("Enter enviado")
+                    actions = ActionChains(self.driver)
+                    actions.move_to_element(caption_box).send_keys(Keys.ENTER).perform()
+                    logger.info("Enter enviado via ActionChains")
                     time.sleep(4)
 
                 except Exception as e:
