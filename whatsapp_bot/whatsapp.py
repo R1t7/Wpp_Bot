@@ -12,8 +12,19 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
+import io
+from PIL import Image
 
 logger = logging.getLogger(__name__)
+
+# Importar biblioteca de clipboard baseado no sistema operacional
+try:
+    import win32clipboard
+    from PIL import ImageGrab
+    HAS_CLIPBOARD = True
+except ImportError:
+    HAS_CLIPBOARD = False
+    logger.warning("win32clipboard não disponível. Instalando pywin32...")
 
 
 class WhatsAppBot:
@@ -137,6 +148,47 @@ class WhatsAppBot:
             logger.error(f"Erro ao enviar mensagem de texto: {e}")
             return False
 
+    def copy_image_to_clipboard(self, image_path):
+        """
+        Copia uma imagem para a área de transferência (Windows)
+
+        Args:
+            image_path: Caminho para a imagem
+
+        Returns:
+            bool: True se a imagem foi copiada com sucesso
+        """
+        try:
+            if not HAS_CLIPBOARD:
+                logger.error("Biblioteca de clipboard não disponível")
+                return False
+
+            # Abrir imagem com PIL
+            image = Image.open(image_path)
+
+            # Converter para bitmap
+            output = io.BytesIO()
+            image.convert("RGB").save(output, "BMP")
+            data = output.getvalue()[14:]  # Remove BMP header
+            output.close()
+
+            # Copiar para clipboard
+            win32clipboard.OpenClipboard()
+            win32clipboard.EmptyClipboard()
+            win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
+            win32clipboard.CloseClipboard()
+
+            logger.info("Imagem copiada para clipboard")
+            return True
+
+        except Exception as e:
+            logger.error(f"Erro ao copiar imagem para clipboard: {e}")
+            try:
+                win32clipboard.CloseClipboard()
+            except:
+                pass
+            return False
+
     def send_image_with_caption(self, image_path, caption=""):
         """
         Envia uma imagem com legenda
@@ -148,7 +200,7 @@ class WhatsAppBot:
         Returns:
             bool: True se a imagem foi enviada com sucesso
         """
-        logger.info(f"Enviando imagem: {image_path}")
+        logger.info(f"Enviando imagem via clipboard: {image_path}")
 
         try:
             # Verificar se o arquivo existe
@@ -156,70 +208,30 @@ class WhatsAppBot:
                 logger.error(f"Arquivo não encontrado: {image_path}")
                 return False
 
-            # Converter para caminho absoluto
-            abs_image_path = os.path.abspath(image_path)
-            logger.info(f"Caminho absoluto: {abs_image_path}")
-
-            # Tentar múltiplos seletores para o botão de anexo
-            attach_button = None
-            attach_selectors = [
-                '//div[@title="Anexar"]',
-                '//div[@aria-label="Anexar"]',
-                '//span[@data-icon="plus"]',
-                '//span[@data-icon="attach-menu-plus"]',
-                '//button[@aria-label="Anexar"]'
-            ]
-
-            for selector in attach_selectors:
-                try:
-                    logger.info(f"Tentando seletor: {selector}")
-                    attach_button = self.driver.find_element(By.XPATH, selector)
-                    if attach_button:
-                        logger.info(f"Botão de anexo encontrado com: {selector}")
-                        break
-                except NoSuchElementException:
-                    continue
-
-            if not attach_button:
-                logger.error("Botão de anexo não encontrado")
+            # Copiar imagem para clipboard
+            logger.info("Copiando imagem para clipboard...")
+            if not self.copy_image_to_clipboard(image_path):
+                logger.error("Falha ao copiar imagem para clipboard")
                 return False
 
-            attach_button.click()
-            logger.info("Botão de anexo clicado")
-            time.sleep(2)
+            # Encontrar caixa de mensagem
+            logger.info("Procurando caixa de mensagem...")
+            message_box = self.wait.until(EC.presence_of_element_located(
+                (By.XPATH, '//div[@contenteditable="true"][@data-tab="10"]')
+            ))
 
-            # Tentar múltiplos seletores para o input de arquivo
-            file_input = None
-            input_selectors = [
-                '//input[@accept="image/*,video/mp4,video/3gpp,video/quicktime"]',
-                '//input[@type="file"]',
-                '//input[@accept*="image"]'
-            ]
+            # Clicar na caixa de mensagem para focar
+            message_box.click()
+            time.sleep(1)
 
-            for selector in input_selectors:
-                try:
-                    logger.info(f"Tentando seletor de input: {selector}")
-                    file_input = self.driver.find_element(By.XPATH, selector)
-                    if file_input:
-                        logger.info(f"Input de arquivo encontrado com: {selector}")
-                        break
-                except NoSuchElementException:
-                    continue
+            # Colar imagem (Ctrl+V)
+            logger.info("Colando imagem (Ctrl+V)...")
+            message_box.send_keys(Keys.CONTROL, 'v')
+            time.sleep(3)
 
-            if not file_input:
-                logger.error("Input de arquivo não encontrado")
-                return False
-
-            file_input.send_keys(abs_image_path)
-            logger.info("Caminho da imagem enviado para input")
-
-            # Aguardar a imagem carregar (verificar se o preview apareceu)
-            logger.info("Aguardando imagem carregar...")
-            time.sleep(5)
-
-            # Verificar se o botão de enviar está habilitado
-            logger.info("Verificando se botão de enviar está disponível...")
-            time.sleep(2)
+            # Aguardar a imagem carregar
+            logger.info("Aguardando preview da imagem...")
+            time.sleep(3)
 
             # Se houver legenda, adicionar e enviar usando Enter
             if caption:
