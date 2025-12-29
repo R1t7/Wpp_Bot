@@ -249,12 +249,17 @@ class WhatsAppBot:
                             caption_box.send_keys(Keys.SHIFT + Keys.ENTER)
 
                     logger.info("Legenda adicionada")
-                    time.sleep(2)
+                    time.sleep(1)
+
+                    # Garantir que o campo de legenda está focado
+                    caption_box.click()
+                    time.sleep(0.5)
 
                     # Enviar usando Enter no campo de legenda
                     logger.info("Enviando imagem usando Enter")
                     caption_box.send_keys(Keys.ENTER)
-                    time.sleep(3)
+                    logger.info("Enter enviado")
+                    time.sleep(4)
 
                 except Exception as e:
                     logger.warning(f"Erro ao adicionar legenda: {e}")
